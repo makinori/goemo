@@ -21,6 +21,10 @@ func InitContext(parent context.Context) context.Context {
 
 // returns class name and injects scss into page
 func SCSS(ctx context.Context, snippet string) string {
+	if snippet == "" {
+		return ""
+	}
+
 	pageStyles, ok := ctx.Value(pageStylesKey).(*[]pageStyle)
 	if !ok {
 		slog.Error("failed to get page scss from context")
