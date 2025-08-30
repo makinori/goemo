@@ -67,7 +67,7 @@ func RenderSCSS(source string, imports ...SassImport) (string, error) {
 	})
 
 	if err != nil {
-		return "", errors.New("failed to compile scss")
+		return "", err
 	}
 
 	return res.CSS, nil
