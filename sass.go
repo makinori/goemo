@@ -1,4 +1,4 @@
-package emgotion
+package goemo
 
 import (
 	"errors"

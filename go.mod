@@ -1,4 +1,4 @@
-module github.com/makinori/emgotion
+module github.com/makinori/goemo
 
 go 1.24.6
 

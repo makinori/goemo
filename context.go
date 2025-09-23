@@ -1,4 +1,4 @@
-package emgotion
+package goemo
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	pageStylesKey = "emgotionPageStyles"
+	pageStylesKey = "goemoPageStyles"
 )
 
 type pageStyle struct {

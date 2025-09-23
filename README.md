@@ -1,4 +1,4 @@
-# Emgotion
+# go emo
 
 Emotion CSS but in Go or something
 
