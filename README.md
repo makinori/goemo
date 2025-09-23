@@ -1,4 +1,6 @@
-# go emo
+# Go Emo
+
+_[picture of emo gopher]_
 
 Emotion CSS but in Go or something
 
