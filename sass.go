@@ -2,6 +2,7 @@ package goemo
 
 import (
 	"errors"
+	"path/filepath"
 	"strings"
 
 	sass "github.com/bep/godartsass/v2"
@@ -12,6 +13,7 @@ var (
 )
 
 type SassImport struct {
+	name     string
 	Filename string
 	Content  string
 }
@@ -29,10 +31,14 @@ func (importResolver embeddedImportResolver) Load(canonicalizedURL string) (sass
 		return sass.Import{}, errors.New("invalid url")
 	}
 
-	filename := canonicalizedURL[8:]
+	name := canonicalizedURL[8:]
+
+	// i dont know and i dont care
+	nameSplit := strings.Split(name, "/")
+	name = nameSplit[len(nameSplit)-1]
 
 	for _, sassImport := range importResolver.imports {
-		if sassImport.Filename == filename {
+		if sassImport.name == name {
 			sourceSyntax := sass.SourceSyntaxSCSS
 			switch {
 			case strings.HasPrefix(sassImport.Filename, ".sass"):
@@ -48,12 +54,18 @@ func (importResolver embeddedImportResolver) Load(canonicalizedURL string) (sass
 		}
 	}
 
-	return sass.Import{}, errors.New("failed to find " + filename)
+	return sass.Import{}, errors.New("failed to find " + name)
 }
 
 func RenderSCSS(source string, imports ...SassImport) (string, error) {
 	if scssTranspiler == nil {
 		return "", errors.New("scss transpiler not initialized")
+	}
+
+	for i := range imports {
+		filename := imports[i].Filename
+		ext := filepath.Ext(filename)
+		imports[i].name = filename[:len(filename)-len(ext)]
 	}
 
 	res, err := scssTranspiler.Execute(sass.Args{
@@ -73,8 +85,8 @@ func RenderSCSS(source string, imports ...SassImport) (string, error) {
 	return res.CSS, nil
 }
 
-func InitSCSS() error {
+func InitSCSS(options sass.Options) error {
 	var err error
-	scssTranspiler, err = sass.Start(sass.Options{})
+	scssTranspiler, err = sass.Start(options)
 	return err
 }
