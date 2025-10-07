@@ -7,15 +7,13 @@ import (
 	"math/rand"
 	"slices"
 	"strings"
+	"sync"
 	"unsafe"
 )
 
 var (
 	pageStylesKey = "goemoPageStyles"
-
-	usingHashWords bool
-	hashWords      []string
-	hashWordsMap   = map[string]uint{}
+	hashWordsKey  = "goemoHashWords"
 )
 
 type pageStyle struct {
@@ -23,13 +21,44 @@ type pageStyle struct {
 	SnippetSCSS string
 }
 
+type hashWords struct {
+	available []string
+	cache     map[string]string
+	mutex     sync.Mutex
+}
+
+func (hashWords *hashWords) getWord(className string) string {
+	hashWords.mutex.Lock()
+	defer hashWords.mutex.Unlock()
+
+	word, ok := hashWords.cache[className]
+	if ok {
+		return word
+	}
+
+	seedUint := crc64.Checksum([]byte(className), crc64.MakeTable(crc64.ECMA))
+	r := rand.New(rand.NewSource(*(*int64)(unsafe.Pointer(&seedUint))))
+
+	i := r.Intn(len(hashWords.available))
+	word = hashWords.available[i]
+
+	hashWords.available = slices.Delete(hashWords.available, i, i+1)
+	hashWords.cache[className] = word
+
+	return word
+}
+
 func InitContext(parent context.Context) context.Context {
 	return context.WithValue(parent, pageStylesKey, &[]pageStyle{})
 }
 
-func UseWords(words []string, seedString string) {
-	usingHashWords = true
-	hashWords = []string{}
+func UseWords(
+	parent context.Context, words []string, seed string,
+) context.Context {
+	hashWords := hashWords{
+		cache: map[string]string{},
+		mutex: sync.Mutex{},
+	}
 
 	for _, word := range words {
 		if len(word) == 0 {
@@ -40,19 +69,12 @@ func UseWords(words []string, seedString string) {
 		word = strings.ToLower(word)
 		word = strings.ReplaceAll(word, " ", "-")
 
-		if !slices.Contains(hashWords, word) {
-			hashWords = append(hashWords, word)
+		if !slices.Contains(hashWords.available, word) {
+			hashWords.available = append(hashWords.available, word)
 		}
 	}
 
-	seedUint := crc64.Checksum([]byte(seedString), crc64.MakeTable(crc64.ECMA))
-
-	r := rand.New(rand.NewSource(*(*int64)(unsafe.Pointer(&seedUint))))
-
-	for i := len(hashWords) - 1; i > 0; i-- {
-		j := r.Intn(i + 1)
-		hashWords[i], hashWords[j] = hashWords[j], hashWords[i]
-	}
+	return context.WithValue(parent, hashWordsKey, &hashWords)
 }
 
 // returns class name and injects scss into page
@@ -70,13 +92,9 @@ func SCSS(ctx context.Context, snippet string) string {
 	// TODO: snippet doesnt consider whitespace
 	var className = hashString(snippet)
 
-	if usingHashWords {
-		hashWordIndex, exists := hashWordsMap[className]
-		if !exists {
-			hashWordIndex = uint(len(hashWordsMap))
-			hashWordsMap[className] = hashWordIndex
-		}
-		className = hashWords[hashWordIndex]
+	hashWords := ctx.Value(hashWordsKey).(*hashWords)
+	if hashWords != nil {
+		className = hashWords.getWord(className)
 	}
 
 	for _, style := range *pageStyles {
