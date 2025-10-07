@@ -1,11 +1,13 @@
 package goemo
 
-import "hash/crc32"
+import (
+	"github.com/cespare/xxhash/v2"
+)
 
 const base52 = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 func hashBytes(data []byte) string {
-	hash := crc32.ChecksumIEEE(data)
+	hash := xxhash.Sum64(data)
 	if hash == 0 {
 		return string(base52[0])
 	}

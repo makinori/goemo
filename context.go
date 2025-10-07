@@ -2,13 +2,14 @@ package goemo
 
 import (
 	"context"
-	"hash/crc64"
 	"log/slog"
 	"math/rand"
 	"slices"
 	"strings"
 	"sync"
 	"unsafe"
+
+	"github.com/cespare/xxhash/v2"
 )
 
 var (
@@ -36,8 +37,9 @@ func (hashWords *hashWords) getWord(className string) string {
 		return word
 	}
 
-	seedUint := crc64.Checksum([]byte(className), crc64.MakeTable(crc64.ECMA))
-	r := rand.New(rand.NewSource(*(*int64)(unsafe.Pointer(&seedUint))))
+	seedUint := xxhash.Sum64([]byte(className))
+	seedInt := *(*int64)(unsafe.Pointer(&seedUint))
+	r := rand.New(rand.NewSource(seedInt))
 
 	i := r.Intn(len(hashWords.available))
 	word = hashWords.available[i]
