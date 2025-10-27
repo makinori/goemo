@@ -1,4 +1,4 @@
-package goemo
+package emohttp
 
 import (
 	"bytes"

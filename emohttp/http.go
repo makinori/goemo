@@ -1,4 +1,4 @@
-package goemo
+package emohttp
 
 import (
 	"fmt"
@@ -25,6 +25,8 @@ var ignoreEncoding = []string{
 var (
 	// go tool air proxy wont work if encoding
 	DisableContentEncodingForHTML = false
+
+	portRegexp = regexp.MustCompile(":[0-9]+$")
 )
 
 func InCommaSeperated(commaSeparated string, needle string) bool {
@@ -39,7 +41,7 @@ func InCommaSeperated(commaSeparated string, needle string) bool {
 	return false
 }
 
-func HTTPServeOptimized(
+func ServeOptimized(
 	w http.ResponseWriter, r *http.Request, data []byte,
 	filename string, allowCache bool,
 ) {
@@ -133,8 +135,8 @@ func HTTPServeOptimized(
 }
 
 // example usage:
-// html.HandleFunc("GET /{file...}", goemo.HTTPFileServerOptimized(publicFS))
-func HTTPFileServerOptimized(fs fs.FS) func(http.ResponseWriter, *http.Request) {
+// emohttp.HandleFunc("GET /{file...}", goemo.FileServerOptimized(publicFS))
+func FileServerOptimized(fs fs.FS) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filename := r.PathValue("file")
 
@@ -151,13 +153,11 @@ func HTTPFileServerOptimized(fs fs.FS) func(http.ResponseWriter, *http.Request) 
 			return
 		}
 
-		HTTPServeOptimized(w, r, data, filename, true)
+		ServeOptimized(w, r, data, filename, true)
 	}
 }
 
-var portRegexp = regexp.MustCompile(":[0-9]+$")
-
-func HTTPGetIPAddress(r *http.Request) string {
+func GetIPAddress(r *http.Request) string {
 	ipAddress := r.Header.Get("X-Forwarded-For")
 	if ipAddress != "" {
 		ipAddress = strings.Split(ipAddress, ",")[0]
@@ -172,7 +172,7 @@ func HTTPGetIPAddress(r *http.Request) string {
 	return ipAddress
 }
 
-func HTTPGetFullURL(r *http.Request) url.URL {
+func GetFullURL(r *http.Request) url.URL {
 	fullUrl := *r.URL // shallow copy
 
 	fullUrl.Scheme = r.Header.Get("X-Forwarded-Proto")
