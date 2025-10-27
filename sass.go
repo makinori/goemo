@@ -85,8 +85,12 @@ func RenderSCSS(source string, imports ...SassImport) (string, error) {
 	return res.CSS, nil
 }
 
-func InitSCSS(options sass.Options) error {
+func InitSCSS(options *sass.Options) error {
+	if options == nil {
+		options = &sass.Options{}
+	}
+
 	var err error
-	scssTranspiler, err = sass.Start(options)
+	scssTranspiler, err = sass.Start(*options)
 	return err
 }
