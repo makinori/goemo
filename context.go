@@ -97,8 +97,8 @@ func SCSS(ctx context.Context, snippet string) string {
 	// TODO: snippet doesnt consider whitespace
 	var className = hashString(snippet)
 
-	hashWords := ctx.Value(hashWordsKey).(*hashWords)
-	if hashWords != nil {
+	hashWords, hasHashWords := ctx.Value(hashWordsKey).(*hashWords)
+	if hasHashWords {
 		className = hashWords.getWord(className)
 	}
 
