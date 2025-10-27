@@ -2,6 +2,7 @@ package goemo
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"log/slog"
 	"mime"
@@ -131,6 +132,8 @@ func HTTPServeOptimized(
 	w.Write(data)
 }
 
+// example usage:
+// html.HandleFunc("GET /{file...}", goemo.HTTPFileServerOptimized(publicFS))
 func HTTPFileServerOptimized(fs fs.FS) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filename := r.PathValue("file")
@@ -141,16 +144,7 @@ func HTTPFileServerOptimized(fs fs.FS) func(http.ResponseWriter, *http.Request) 
 			return
 		}
 
-		stat, err := file.Stat()
-		if err != nil {
-			slog.Error("failed to file stat", "err", err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		data := make([]byte, stat.Size())
-
-		_, err = file.Read(data)
+		data, err := io.ReadAll(file)
 		if err != nil {
 			slog.Error("failed to read file", "err", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
