@@ -12,9 +12,12 @@ import (
 	"github.com/cespare/xxhash/v2"
 )
 
+type PageStylesKeyType string
+type HashWordsKeyType string
+
 var (
-	pageStylesKey = "goemoPageStyles"
-	hashWordsKey  = "goemoHashWords"
+	pageStylesKey PageStylesKeyType = "goemoPageStyles"
+	hashWordsKey  HashWordsKeyType  = "goemoHashWords"
 )
 
 type pageStyle struct {
