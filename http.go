@@ -23,7 +23,7 @@ var ignoreEncoding = []string{
 
 var (
 	// go tool air proxy wont work if encoding
-	HTTPDisableContentEncoding = false
+	DisableContentEncodingForHTML = false
 )
 
 func InCommaSeperated(commaSeparated string, needle string) bool {
@@ -84,8 +84,10 @@ func HTTPServeOptimized(
 
 	// rest is encoding related
 
-	if HTTPDisableContentEncoding ||
-		slices.Contains(ignoreEncoding, contentType) {
+	if slices.Contains(ignoreEncoding, contentType) ||
+		(DisableContentEncodingForHTML &&
+			strings.HasPrefix(contentType, "text/html")) {
+
 		w.Write(data)
 		return
 	}

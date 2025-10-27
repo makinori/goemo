@@ -6,7 +6,7 @@ require (
 	github.com/andybalholm/brotli v1.2.0
 	github.com/bep/godartsass/v2 v2.5.0
 	github.com/cespare/xxhash/v2 v2.3.0
-	github.com/klauspost/compress v1.18.1
+	github.com/klauspost/compress v1.18.1 // zstd
 )
 
 require (
