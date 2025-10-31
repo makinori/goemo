@@ -163,8 +163,10 @@ func GetIPAddress(r *http.Request) string {
 		ipAddress = strings.Split(ipAddress, ",")[0]
 		ipAddress = strings.TrimSpace(ipAddress)
 	} else {
-		ipAddress = portRegexp.ReplaceAllString(r.RemoteAddr, "")
+		ipAddress = r.RemoteAddr
 	}
+
+	ipAddress = portRegexp.ReplaceAllString(ipAddress, "")
 
 	ipAddress = strings.TrimPrefix(ipAddress, "[")
 	ipAddress = strings.TrimSuffix(ipAddress, "]")
