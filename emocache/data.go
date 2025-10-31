@@ -13,6 +13,7 @@ type Data[T any] struct {
 	Key      string
 	CronSpec string
 	Current  T
+	Updated  time.Time
 	// do not use. this gets fresh data. use Current
 	Retrieve func() (T, error)
 }
@@ -30,7 +31,7 @@ func (data *Data[T]) getFresh() {
 		// exit program entirely
 	}
 
-	expiresAt := schedule.Next(time.Now())
+	expires := schedule.Next(time.Now())
 
 	// get data
 	freshData, err := data.Retrieve()
@@ -43,8 +44,13 @@ func (data *Data[T]) getFresh() {
 	}
 
 	data.Current = freshData
+	data.Updated = time.Now()
 
-	err = setCache(data.Key, data.Current, expiresAt)
+	err = setCache(data.Key, cacheData[T]{
+		Data:    data.Current,
+		Updated: data.Updated,
+		Expires: expires,
+	})
 	if err != nil {
 		slog.Error(
 			"failed to set cache",
@@ -54,14 +60,16 @@ func (data *Data[T]) getFresh() {
 }
 
 func (data *Data[T]) init(c *cron.Cron) {
-
 	// try from cache
-	err := getCache(data.Key, &data.Current)
+	cache, err := getCache[T](data.Key)
 	if err != nil {
+		// if expires will also error
 		slog.Info("fetching fresh", "key", data.Key)
 		data.getFresh()
 	} else {
 		slog.Info("already cached", "key", data.Key)
+		data.Current = cache.Data
+		data.Updated = cache.Updated
 	}
 
 	// setup cron

@@ -13,19 +13,20 @@ var (
 	currentCacheDir = ""
 )
 
-func setCache(key string, data any, expiresAt time.Time) error {
+type cacheData[T any] struct {
+	Data    T         `json:"data"`
+	Updated time.Time `json:"updated"`
+	Expires time.Time `json:"expires"`
+}
+
+func setCache[T any](key string, data cacheData[T]) error {
 	if currentCacheDir == "" {
 		return errors.New("cache dir not set")
 	}
 
 	os.Mkdir(currentCacheDir, 0755)
 
-	finalData := map[string]any{
-		"expiresAt": expiresAt,
-		"data":      data,
-	}
-
-	jsonBytes, err := json.Marshal(finalData)
+	jsonBytes, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
@@ -41,32 +42,27 @@ func setCache(key string, data any, expiresAt time.Time) error {
 	return nil
 }
 
-func getCache[T any](key string, output *T) error {
+func getCache[T any](key string) (*cacheData[T], error) {
 	if currentCacheDir == "" {
-		return errors.New("cache dir not set")
+		return nil, errors.New("cache dir not set")
 	}
 
 	bytes, err := os.ReadFile(filepath.Join(currentCacheDir, key+".json"))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	var cacheData struct {
-		ExpiresAt time.Time `json:"expiresAt"`
-		Data      T         `json:"data"`
-	}
+	var cacheData cacheData[T]
 
 	err = json.Unmarshal(bytes, &cacheData)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if time.Now().After(cacheData.ExpiresAt) {
+	if time.Now().After(cacheData.Expires) {
 		os.Remove("cache/" + key + ".json")
-		return errors.New("cache data expired")
+		return nil, errors.New("cache data expired")
 	}
 
-	*output = cacheData.Data
-
-	return nil
+	return &cacheData, nil
 }
